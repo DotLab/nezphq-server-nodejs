@@ -2,7 +2,7 @@ const app = require("express")();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
 
-server.listen(3000, () => console.log('listening on *:3000'));
+server.listen(6021, () => console.log('listening on *:6021'));
 // app.get("/", (_, res) => res.status(200).end());
 
 const freeRoomIds = [];
