@@ -24,20 +24,25 @@ function releaseRoom(room) {
 	freeRoomIds.push(room.id);
 }
 
+// cl_handshake(cred) --> |
+// cl_connect_to(id) ---> | -> sv_connected(id, cred)
+// cl_send(msg) --------> | -> sv_deliver(msg)
+// cl_recheck(cred) ----> | -> sv_recheck(cred)
+
 io.on("connection", socket => {
 	console.log("connection", socket.id);
 	var room;
 
-	socket.on("cl_handshake", (credentials, fn) => {
-		console.log("\tcl_handshake", socket.id, credentials);
-		if (room || !credentials) {
+	socket.on("cl_handshake", (cred, fn) => {
+		console.log("\tcl_handshake", socket.id, JSON.stringify(cred));
+		if (room || !cred) {
 			socket.disconnect();
 			return;
 		}
 
 		room = getRoom();
 		room.socket = socket;
-		room.credentials = credentials;
+		room.cred = cred;
 		room.sin = 0;
 
 		setTimeout(() => {
@@ -59,8 +64,8 @@ io.on("connection", socket => {
 			if (rooms[id].waitingId === undefined) {  // connect to a free person
 				fn(0);
 			} else if (rooms[id].waitingId === room.id) {  // connect to someone waiting
-				rooms[id].socket.emit("sv_connected", room.id, room.credentials);
-				room.socket.emit("sv_connected", id, rooms[id].credentials);
+				rooms[id].socket.emit("sv_connected", room.id, room.cred);
+				room.socket.emit("sv_connected", id, rooms[id].cred);
 	
 				rooms[id].connectedRoom = room;
 				room.connectedRoom = rooms[id];
@@ -82,8 +87,8 @@ io.on("connection", socket => {
 	});
 
 	socket.on("cl_send", (msg, fn) => {
-		console.log("\tcl_send", socket.id, msg);
-		if (!room || !room.connectedRoom || room.connectedRoom.ended || typeof msg !== "string") {
+		console.log("\tcl_send", socket.id, JSON.stringify(msg));
+		if (!room || room.ended || !room.connectedRoom || room.connectedRoom.ended) {
 			socket.disconnect();
 			return;
 		}
@@ -94,7 +99,10 @@ io.on("connection", socket => {
 
 	socket.on("disconnect", () => {
 		console.log("\tdisconnect", socket.id);
-		if (room) releaseRoom(room);
+		if (room) {
+			if (room.connectedRoom) room.connectedRoom.socket.disconnect();
+			releaseRoom(room);
+		}
 		room = null;
 	});
 });
