@@ -1,9 +1,14 @@
+const fs =  require("fs");
+
 const app = require("express")();
-const server = require("http").Server(app);
+const server = require("https").createServer({
+	key: fs.readFileSync("../../Ca/localhost/key.pem"),
+	cert: fs.readFileSync("../../Ca/localhost/cert.pem")
+}, app);
 const io = require("socket.io")(server);
 
 server.listen(6021, () => console.log('listening on *:6021'));
-// app.get("/", (_, res) => res.status(200).end());
+app.get("/", (_, res) => res.status(200).send("server online").end());
 
 const freeRoomIds = [];
 const rooms = [];
