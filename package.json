@@ -6,6 +6,7 @@
   "license": "CC-BY-NC-SA-4.0",
   "main": "index.js",
   "scripts": {
+  	"mon": "nodemon index.js"
   },
   "dependencies": {
     "express": "^4.16.4",

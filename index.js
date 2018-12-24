@@ -1,13 +1,8 @@
-const fs =  require("fs");
-
 const app = require("express")();
-const server = require("https").createServer({
-	key: fs.readFileSync("../../Ca/localhost/key.pem"),
-	cert: fs.readFileSync("../../Ca/localhost/cert.pem")
-}, app);
+const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 
-server.listen(6021, () => console.log('listening on *:6021'));
+server.listen(6023, () => console.log('listening on *:6023'));
 app.get("/", (_, res) => res.status(200).send("server online").end());
 
 const freeRoomIds = [];
@@ -36,7 +31,11 @@ function releaseRoom(room) {
 
 io.on("connection", socket => {
 	console.log("connection", socket.id);
+
 	var room;
+	setTimeout(() => {  // auto disconnect
+		if (room === undefined) socket.disconnect();
+	}, 5000);
 
 	socket.on("cl_handshake", (cred, fn) => {
 		console.log("\tcl_handshake", socket.id, JSON.stringify(cred));
@@ -50,6 +49,7 @@ io.on("connection", socket => {
 		room.cred = cred;
 		room.sin = 0;
 
+		console.log("\tcl_handshake complete", socket.id, room.id);
 		setTimeout(() => {
 			fn(room.id);
 		}, 500)
